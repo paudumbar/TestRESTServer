@@ -1,0 +1,59 @@
+apply plugin: 'java'
+apply plugin: 'application'
+
+
+apply plugin: 'groovy'
+
+
+version = "1.0"
+
+mainClassName = "Main"
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src']
+        }
+        groovy {
+            srcDirs = []
+        }
+    }
+}
+
+
+repositories {
+    maven { url "${mavenRepo}" }
+    maven { url "${releaseRepo}" }
+    maven { url "${snapshotRepo}" }
+    maven { url "http://maven.restlet.org"}
+}
+
+
+dependencies {
+
+    compile 'org.restlet.jee:org.restlet:2.2.2'
+
+}
+
+
+task uberJar(type: Jar, dependsOn: classes) {
+    doFirst {
+        classifier = 'uber'
+        from files(sourceSets.main.output.classesDir)
+        from files(sourceSets.main.output.resourcesDir)
+        from(configurations.runtime.collect { it.isDirectory() ? it : zipTree(it) }) {
+            exclude "META-INF/*.SF"
+            exclude "META-INF/*.DSA"
+            exclude "META-INF/*.RSA"
+            exclude "logback*.xml"
+        }
+        manifest { attributes 'Main-Class': 'Main' }
+    }
+}
+
+task zip(type: Zip, dependsOn: uberJar) {
+    from libsDir
+    from files('external') {
+        exclude "*DEV*"
+    }
+}
